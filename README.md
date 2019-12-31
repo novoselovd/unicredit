@@ -1,9 +1,3 @@
-# flask-jwt-auth
-
-JWT Authorization in Flask
-
-Full tutorial here:
-https://codeburst.io/jwt-authorization-in-flask-c63c1acf4eeb
 ## How to run
 
 ``` bash
