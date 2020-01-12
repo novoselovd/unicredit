@@ -14,6 +14,9 @@ class UserModel(db.Model):
     username = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    name = db.Column(db.String(120), nullable=False)
+    surname = db.Column(db.String(120), nullable=False)
+    current_balance = db.Column(db.Integer, nullable=False)
 
     def save_to_db(self):
         db.session.add(self)
@@ -26,6 +29,10 @@ class UserModel(db.Model):
     @classmethod
     def find_by_email(cls, email):
         return cls.query.filter_by(email=email).first()
+
+    @classmethod
+    def find_by_id(cls, id):
+        return cls.query.filter_by(id=id).first()
 
     @classmethod
     def return_all(cls):
@@ -57,6 +64,11 @@ class UserModel(db.Model):
     def change_password(self, new_password):
         db.session.query(UserModel).filter(UserModel.username == self.username).\
             update({UserModel.password: new_password}, synchronize_session=False)
+        db.session.commit()
+
+    def change_balance(self, new_balance):
+        db.session.query(UserModel).filter(UserModel.id == self.id).\
+            update({UserModel.current_balance: new_balance}, synchronize_session=False)
         db.session.commit()
 
     def get_reset_password_token(self, expires_in=60000):
@@ -98,3 +110,26 @@ class RevokedTokenModel(db.Model):
     def is_jti_blacklisted(cls, jti):
         query = cls.query.filter_by(jti=jti).first()
         return bool(query)
+
+
+class TransactionModel(db.Model):
+    __tablename__ = 'transactions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, nullable=False)
+    receiver_id = db.Column(db.Integer, nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()
+
+
+    
+
+
+
+
+
+
+
