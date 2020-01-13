@@ -1,5 +1,5 @@
 from flask_restful import Resource, reqparse
-from models import UserModel, RevokedTokenModel
+from models import UserModel, RevokedTokenModel, TransactionModel
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required,
                                 get_jwt_identity, get_raw_jwt)
 
@@ -7,6 +7,8 @@ registration_parser = reqparse.RequestParser()
 registration_parser.add_argument('username', help='This field cannot be blank', required=True)
 registration_parser.add_argument('password', help='This field cannot be blank', required=True)
 registration_parser.add_argument('email', help='This field cannot be blank', required=True)
+registration_parser.add_argument('name', help='This field cannot be blank', required=True)
+registration_parser.add_argument('surname', help='This field cannot be blank', required=True)
 
 
 class UserRegistration(Resource):
@@ -19,7 +21,10 @@ class UserRegistration(Resource):
         new_user = UserModel(
             username=data['username'],
             password=UserModel.generate_hash(data['password']),
-            email=data['email']
+            email=data['email'],
+            name=data['name'],
+            surname=data['surname'],
+            current_balance=100
         )
 
         try:
@@ -112,7 +117,6 @@ password_change_parser.add_argument('username', help='Please fill in your userna
 password_change_parser.add_argument('current_password', help='Please fill in your current password', required=True)
 password_change_parser.add_argument('new_password', help='Please fill in your new password', required=True)
 
-
 class UserChangePassword(Resource):
     @jwt_required
     def post(self):
@@ -158,3 +162,64 @@ class UserResetPasswordViaEmail(Resource):
         data = after_confirmation_password_change_parser.parse_args()
         user.change_password(UserModel.generate_hash(data['new_password']))
         return {'message': 'You have successfully changed your password!'}
+
+
+transaction_parser = reqparse.RequestParser()
+transaction_parser.add_argument('sender_id', help='Please fill in your sender_id', required=True)
+transaction_parser.add_argument('receiver_id', help='Please fill in your receiver_id', required=True)
+transaction_parser.add_argument('amount', help='Please fill in your amount', type=int, required=True)
+
+
+class Transaction(Resource):
+    def post(self):
+        data = transaction_parser.parse_args()
+
+        new_transaction = TransactionModel(
+            sender_id=data['sender_id'],
+            receiver_id=data['receiver_id'],
+            amount=data['amount']
+        )
+
+        try:
+            if data['amount'] <= 0:
+                return {'message': 'Amount is less or equal to zero'}
+
+            if data['sender_id'] == data['receiver_id']:
+                return {'message': 'Sender == Receiver'}
+
+            sender = UserModel.find_by_id(data['sender_id'])
+
+            if not sender:
+                return {'message': 'Sender does not exist'}
+
+            if sender.current_balance < data['amount']:
+                return {'message': 'Sender does not have enough unicoins'}
+            
+            receiver = UserModel.find_by_id(data['receiver_id'])
+            
+            if not receiver:
+                return {'message': 'Receiver does not exist'}
+
+            sender.change_balance(sender.current_balance - data['amount'])
+
+            new_transaction.save_to_db()
+
+            receiver.change_balance(receiver.current_balance + data['amount'])
+
+            return {
+                'message': 'Transaction from {0} to {1}'.format(data['sender_id'], data['receiver_id'])
+            }
+        except:
+            return {'message': 'Something went wrong'}, 500
+
+
+
+
+
+
+
+
+
+
+
+
