@@ -16,7 +16,7 @@ class UserRegistration(Resource):
         data = registration_parser.parse_args()
 
         if UserModel.find_by_username(data['username']) or UserModel.find_by_email(data['email']):
-            return {'message': "User with such username or email already exists"}
+            return {'message': "User with such username or email already exists"}, 400
 
         new_user = UserModel(
             username=data['username'],
@@ -50,7 +50,7 @@ class UserLogin(Resource):
         current_user = UserModel.find_by_username(data['username'])
 
         if not current_user:
-            return {'message': 'User {} doesn\'t exist'.format(data['username'])}
+            return {'message': 'User {} doesn\'t exist'.format(data['username'])}, 400
 
         if UserModel.verify_hash(data['password'], current_user.password):
             access_token = create_access_token(identity=data['username'])
@@ -61,7 +61,7 @@ class UserLogin(Resource):
                 'refresh_token': refresh_token
             }
         else:
-            return {'message': 'Wrong credentials'}
+            return {'message': 'Wrong credentials'}, 400
 
 
 class UserLogoutAccess(Resource):
@@ -124,7 +124,7 @@ class UserChangePassword(Resource):
 
         current_user = UserModel.find_by_username(data['username'])
         if not current_user:
-            return {'message': 'User {} doesn\'t exist'.format(data['username'])}
+            return {'message': 'User {} doesn\'t exist'.format(data['username'])}, 400
 
         if UserModel.verify_hash(data['current_password'], current_user.password):
             current_user.change_password(UserModel.generate_hash(data['new_password']))
@@ -132,7 +132,7 @@ class UserChangePassword(Resource):
                 'message': 'You have successfully changed your password!'
             }
         else:
-            return {'message': 'Wrong password'}
+            return {'message': 'Wrong password'}, 400
 
 
 password_recover_parser = reqparse.RequestParser()
@@ -145,7 +145,7 @@ class UserForgotPassword(Resource):
 
         current_user = UserModel.find_by_email(data['email'])
         if not current_user:
-            return {'message': 'User with such email doesn\'t exist'}
+            return {'message': 'User with such email doesn\'t exist'}, 400
         UserModel.send_password_reset_email(current_user)
         return {'message': "An e-mail was sent to {}. Follow the instructions to reset the password".format(data['email'])}
 
@@ -158,11 +158,15 @@ class UserResetPasswordViaEmail(Resource):
     def post(self, token):
         user = UserModel.verify_reset_password_token(token)
         if not user:
-            return {'message': 'Verification failed. Please try again'}
+            return {'message': 'Verification failed. Please try again'}, 400
         data = after_confirmation_password_change_parser.parse_args()
         user.change_password(UserModel.generate_hash(data['new_password']))
         return {'message': 'You have successfully changed your password!'}
 
+
+class UserFindById(Resource):
+    def get(self, id):
+        return UserModel.return_user_by_id(id)
 
 transaction_parser = reqparse.RequestParser()
 transaction_parser.add_argument('sender_id', help='Please fill in your sender_id', required=True)

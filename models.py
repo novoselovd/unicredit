@@ -39,10 +39,30 @@ class UserModel(db.Model):
         def to_json(x):
             return {
                 'username': x.username,
-                'password': x.password
+                'id': x.id,
+                'email': x.email,
+                'name': x.name,
+                'surname': x.surname,
+                'balance': x.current_balance
             }
 
         return {'users': list(map(lambda x: to_json(x), UserModel.query.all()))}
+
+    @classmethod
+    def return_user_by_id(cls, id):
+        def to_json(x):
+            return {
+                'username': x.username,
+                'id': x.id,
+                'email': x.email,
+                'name': x.name,
+                'surname': x.surname,
+                'balance': x.current_balance
+            }
+
+        return {'user': to_json(cls.find_by_id(id))}
+
+
 
     @classmethod
     def delete_all(cls):
@@ -123,13 +143,3 @@ class TransactionModel(db.Model):
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()
-
-
-    
-
-
-
-
-
-
-
