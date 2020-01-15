@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
@@ -38,6 +38,15 @@ app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 def check_if_token_in_blacklist(decrypted_token):
     jti = decrypted_token['jti']
     return models.RevokedTokenModel.is_jti_blacklisted(jti)
+
+@jwt.expired_token_loader
+def expired_token_callback(expired_token):
+    token_type = expired_token['type']
+    return jsonify({
+        'status': 401,
+        'sub_status': 42,
+        'msg': 'The {} token has expired'.format(token_type)
+    }), 401
 
 
 import views, models, resources
