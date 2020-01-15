@@ -5,9 +5,17 @@ from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from flask_cors import CORS
 
+errors = {
+    'ExpiredSignatureError': {
+        'message': 'Token has expired',
+        'status': 401
+    }
+}
+
 app = Flask(__name__)
 CORS(app)
-api = Api(app)
+api = Api(app, errors=errors)
+
 
 # todo: create app mail for password recovery via email
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
