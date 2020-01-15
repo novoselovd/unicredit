@@ -97,6 +97,7 @@ class TokenRefresh(Resource):
 
 
 class AllUsers(Resource):
+    @jwt_required
     def get(self):
         return UserModel.return_all()
 
@@ -165,6 +166,7 @@ class UserResetPasswordViaEmail(Resource):
 
 
 class UserFindById(Resource):
+    @jwt_required
     def get(self, id):
         return UserModel.return_user_by_id(id)
 
