@@ -114,7 +114,6 @@ class SecretResource(Resource):
 
 
 password_change_parser = reqparse.RequestParser()
-password_change_parser.add_argument('username', help='Please fill in your username', required=True)
 password_change_parser.add_argument('current_password', help='Please fill in your current password', required=True)
 password_change_parser.add_argument('new_password', help='Please fill in your new password', required=True)
 
@@ -123,7 +122,8 @@ class UserChangePassword(Resource):
     def post(self):
         data = password_change_parser.parse_args()
 
-        current_user = UserModel.find_by_username(data['username'])
+        current_username = get_jwt_identity()
+        current_user = UserModel.find_by_username(current_username)
         if not current_user:
             return {'message': 'User {} doesn\'t exist'.format(data['username'])}, 400
 
