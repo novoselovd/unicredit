@@ -4,7 +4,7 @@ from time import time
 import jwt
 from flask_mail import Message
 from flask import render_template, url_for
-
+from sqlalchemy import and_, or_, not_
 
 
 class UserModel(db.Model):
@@ -62,8 +62,6 @@ class UserModel(db.Model):
 
         return {'user': to_json(cls.find_by_id(id))}
 
-
-
     @classmethod
     def delete_all(cls):
         try:
@@ -83,12 +81,14 @@ class UserModel(db.Model):
 
     def change_password(self, new_password):
         db.session.query(UserModel).filter(UserModel.username == self.username).\
-            update({UserModel.password: new_password}, synchronize_session=False)
+            update({UserModel.password: new_password},
+                   synchronize_session=False)
         db.session.commit()
 
     def change_balance(self, new_balance):
         db.session.query(UserModel).filter(UserModel.id == self.id).\
-            update({UserModel.current_balance: new_balance}, synchronize_session=False)
+            update({UserModel.current_balance: new_balance},
+                   synchronize_session=False)
         db.session.commit()
 
     def get_reset_password_token(self, expires_in=60000):
@@ -107,12 +107,14 @@ class UserModel(db.Model):
     @staticmethod
     def send_password_reset_email(user):
         token = user.get_reset_password_token()
-        msg = Message('Reset your password', sender='Слайдовалюта', recipients=[user.email])
-        link = 'https://slide-wallet.firebaseapp.com/auth/restore-password?token=' + str(token)
+        msg = Message('Reset your password',
+                      sender='Слайдовалюта', recipients=[user.email])
+        link = 'https://slide-wallet.firebaseapp.com/auth/restore-password?token=' + \
+            str(token)
         msg.body = render_template('reset_password.txt',
-                                         user=user, link=link)
+                                   user=user, link=link)
         msg.html = render_template('reset_password.html',
-                                         user=user, link=link)
+                                   user=user, link=link)
         mail.send(msg)
 
 
@@ -142,3 +144,64 @@ class TransactionModel(db.Model):
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()
+
+    @classmethod
+    def find_transfer_by_id_sender(cls, sender_id):
+        return cls.query.filter_by(sender_id=sender_id).first()
+
+    @classmethod
+    def find_transfer_by_id_receiver(cls, receiver_id):
+        return cls.query.filter_by(receiver_id=receiver_id).first()
+
+    @classmethod
+    def find_transfer_by_id(cls, id):
+        return cls.query.filter_by(id=id).first()
+
+    @classmethod
+    def find_transfer_by_sender_or_receiver_id(cls, user_id):
+        return cls.query.filter_by(receiver_id=user_id).all()
+
+    @classmethod
+    def return_all(cls):
+        def to_json(x):
+            return {
+                'id': x.id,
+                'sender_id': x.sender_id,
+                'receiver_id': x.receiver_id,
+                'amount': x.amount
+            }
+        return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.all()))}
+
+    @classmethod
+    def return_transfer_by_user_id(cls, id):
+        def to_json(x):
+            return {
+                'id': x.id,
+                'sender_id': x.sender_id,
+                'receiver_id': x.receiver_id,
+                'amount': x.amount
+            }
+        return {'transactions': list(map(lambda x: to_json(x),
+            TransactionModel.query.filter(or_(TransactionModel.sender_id == id, TransactionModel.receiver_id == id)).all()))}
+
+    @classmethod
+    def return_transfer_by_sender_id(cls, id):
+        def to_json(x):
+            return {
+                'id': x.id,
+                'sender_id': x.sender_id,
+                'receiver_id': x.receiver_id,
+                'amount': x.amount
+            }
+        return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.filter_by(sender_id=id).all()))}
+
+    @classmethod
+    def return_transfer_by_receiver_id(cls, id):
+        def to_json(x):
+            return {
+                'id': x.id,
+                'sender_id': x.sender_id,
+                'receiver_id': x.receiver_id,
+                'amount': x.amount
+            }
+        return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.filter_by(receiver_id=id).all()))}
