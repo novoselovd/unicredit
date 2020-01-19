@@ -35,8 +35,8 @@ class UserRegistration(Resource):
 
         try:
             new_user.save_to_db()
-            access_token = create_access_token(identity=data['username'])
-            refresh_token = create_refresh_token(identity=data['username'])
+            access_token = create_access_token(identity=new_user)
+            refresh_token = create_refresh_token(identity=new_user)
             return {
                 'message': 'User {} was created'.format(data['username']),
                 'access_token': access_token,
@@ -62,8 +62,8 @@ class UserLogin(Resource):
             return {'message': 'User {} doesn\'t exist'.format(data['username'])}, 400
 
         if UserModel.verify_hash(data['password'], current_user.password):
-            access_token = create_access_token(identity=data['username'])
-            refresh_token = create_refresh_token(identity=data['username'])
+            access_token = create_access_token(identity=current_user)
+            refresh_token = create_refresh_token(identity=current_user)
             return {
                 'message': 'Logged in as {}'.format(current_user.username),
                 'access_token': access_token,
@@ -134,10 +134,9 @@ class UserChangePassword(Resource):
     def post(self):
         data = password_change_parser.parse_args()
 
-        current_username = get_jwt_identity()
-        current_user = UserModel.find_by_username(current_username)
+        current_user = get_jwt_identity()
         if not current_user:
-            return {'message': 'User {} doesn\'t exist'.format(data['username'])}, 400
+            return {'message': 'Verification failed'}, 400
 
         if UserModel.verify_hash(data['current_password'], current_user.password):
             current_user.change_password(
@@ -177,7 +176,10 @@ class UserResetPasswordViaEmail(Resource):
             return {'message': 'Verification failed. Please try again'}, 400
         data = after_confirmation_password_change_parser.parse_args()
         user.change_password(UserModel.generate_hash(data['new_password']))
-        return {'message': 'You have successfully changed your password!'}
+        access_token = create_access_token(identity=user)
+        refresh_token = create_refresh_token(identity=user)
+
+        return {'message': 'You have successfully changed your password!', 'access_token': access_token, 'refresh_token': refresh_token}
 
 
 class UserFindById(Resource):
@@ -198,8 +200,7 @@ class Transaction(Resource):
     @jwt_required
     def post(self):
         data = transaction_parser.parse_args()
-        current_username = get_jwt_identity()
-        sender = UserModel.find_by_username(current_username)
+        sender = get_jwt_identity()
         receiver = UserModel.find_by_username(data['receiver_username'])
         if not receiver:
             return {'message': 'Receiver does not exist'}, 500
