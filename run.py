@@ -63,6 +63,18 @@ def expired_token_callback(expired_token):
     }), 401
 
 
+@jwt.user_identity_loader
+def user_identity_lookup(user):
+    return {
+        'username': user.username,
+        'id': user.id,
+        'email': user.email,
+        'name': user.name,
+        'surname': user.surname,
+        'balance': user.current_balance
+    }
+
+
 #TODO: Consider moving to the top and get rid off circular dependency of db
 import resources
 import views
