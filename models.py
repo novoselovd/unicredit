@@ -110,7 +110,7 @@ class UserModel(db.Model):
         msg = Message('Reset your password',
                       sender='Слайдовалюта', recipients=[user.email])
         link = 'https://slide-wallet.firebaseapp.com/auth/restore-password?token=' + \
-            str(token)
+            str(token)[2:-1]
         msg.body = render_template('reset_password.txt',
                                    user=user, link=link)
         msg.html = render_template('reset_password.html',
