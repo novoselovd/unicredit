@@ -134,7 +134,7 @@ class UserChangePassword(Resource):
     def post(self):
         data = password_change_parser.parse_args()
 
-        current_user = get_jwt_identity()
+        current_user = UserModel.find_by_username(get_jwt_identity()['username'])
         if not current_user:
             return {'message': 'Verification failed'}, 400
 
@@ -200,7 +200,7 @@ class Transaction(Resource):
     @jwt_required
     def post(self):
         data = transaction_parser.parse_args()
-        sender = get_jwt_identity()
+        sender = UserModel.find_by_username(get_jwt_identity()['username'])
         receiver = UserModel.find_by_username(data['receiver_username'])
         if not receiver:
             return {'message': 'Receiver does not exist'}, 500
