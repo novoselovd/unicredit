@@ -22,7 +22,7 @@ class UserRegistration(Resource):
         data = registration_parser.parse_args()
 
         if UserModel.find_by_username(data['username']) or UserModel.find_by_email(data['email']):
-            return {'message': "User with such username or email already exists"}
+            return {'message': "User with such username or email already exists"}, 400
 
         new_user = UserModel(
             username=data['username'],
@@ -35,8 +35,7 @@ class UserRegistration(Resource):
 
         try:
             new_user.save_to_db()
-            expires = datetime.timedelta(days=1)
-            access_token = create_access_token(identity=data['username'], expires_delta=expires) #expiring in 24 hours
+            access_token = create_access_token(identity=data['username'])
             refresh_token = create_refresh_token(identity=data['username'])
             return {
                 'message': 'User {} was created'.format(data['username']),
@@ -60,7 +59,7 @@ class UserLogin(Resource):
         current_user = UserModel.find_by_username(data['username'])
 
         if not current_user:
-            return {'message': 'User {} doesn\'t exist'.format(data['username'])}
+            return {'message': 'User {} doesn\'t exist'.format(data['username'])}, 400
 
         if UserModel.verify_hash(data['password'], current_user.password):
             access_token = create_access_token(identity=data['username'])
@@ -71,7 +70,7 @@ class UserLogin(Resource):
                 'refresh_token': refresh_token
             }
         else:
-            return {'message': 'Wrong credentials'}
+            return {'message': 'Wrong credentials'}, 400
 
 
 class UserLogoutAccess(Resource):
@@ -102,8 +101,7 @@ class TokenRefresh(Resource):
     @jwt_refresh_token_required
     def post(self):
         current_user = get_jwt_identity()
-        expires = datetime.timedelta(days=1)
-        access_token = create_access_token(identity=current_user, expires_delta=expires)
+        access_token = create_access_token(identity=current_user)
         return {'access_token': access_token}, 200
 
 
@@ -126,8 +124,6 @@ class SecretResource(Resource):
 
 password_change_parser = reqparse.RequestParser()
 password_change_parser.add_argument(
-    'username', help='Please fill in your username', required=True)
-password_change_parser.add_argument(
     'current_password', help='Please fill in your current password', required=True)
 password_change_parser.add_argument(
     'new_password', help='Please fill in your new password', required=True)
@@ -138,9 +134,10 @@ class UserChangePassword(Resource):
     def post(self):
         data = password_change_parser.parse_args()
 
-        current_user = UserModel.find_by_username(data['username'])
+        current_username = get_jwt_identity()
+        current_user = UserModel.find_by_username(current_username)
         if not current_user:
-            return {'message': 'User {} doesn\'t exist'.format(data['username'])}
+            return {'message': 'User {} doesn\'t exist'.format(data['username'])}, 400
 
         if UserModel.verify_hash(data['current_password'], current_user.password):
             current_user.change_password(
@@ -149,7 +146,7 @@ class UserChangePassword(Resource):
                 'message': 'You have successfully changed your password!'
             }
         else:
-            return {'message': 'Wrong password'}
+            return {'message': 'Wrong password'}, 400
 
 
 password_recover_parser = reqparse.RequestParser()

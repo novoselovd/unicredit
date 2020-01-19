@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from flask_cors import CORS
 from flask import jsonify
+import datetime
 
 errors = {
     'ExpiredSignatureError': {
@@ -28,6 +29,8 @@ mail = Mail(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'some-secret-string'
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(seconds=900)
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = datetime.timedelta(seconds=3600)
 
 db = SQLAlchemy(app)
 
