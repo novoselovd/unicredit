@@ -76,9 +76,7 @@ def user_identity_lookup(user):
 
 
 #TODO: Consider moving to the top and get rid off circular dependency of db
-import resources
-import views
-import models
+import resources, views, models
 
 api.add_resource(resources.UserRegistration, '/registration')
 api.add_resource(resources.UserLogin, '/login')
