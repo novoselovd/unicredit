@@ -140,6 +140,7 @@ class TransactionModel(db.Model):
     sender_id = db.Column(db.Integer, nullable=False)
     receiver_id = db.Column(db.Integer, nullable=False)
     amount = db.Column(db.Integer, nullable=False)
+    date = db.Column(db.DateTime, nullable=False)
 
     def save_to_db(self):
         db.session.add(self)
@@ -168,7 +169,8 @@ class TransactionModel(db.Model):
                 'id': x.id,
                 'sender_id': x.sender_id,
                 'receiver_id': x.receiver_id,
-                'amount': x.amount
+                'amount': x.amount,
+                'date': x.date.isoformat()
             }
         return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.all()))}
 
@@ -179,7 +181,8 @@ class TransactionModel(db.Model):
                 'id': x.id,
                 'sender_id': x.sender_id,
                 'receiver_id': x.receiver_id,
-                'amount': x.amount
+                'amount': x.amount,
+                'date': x.date.isoformat()
             }
         return {'transactions': list(map(lambda x: to_json(x),
             TransactionModel.query.filter(or_(TransactionModel.sender_id == id, TransactionModel.receiver_id == id)).all()))}
@@ -191,7 +194,8 @@ class TransactionModel(db.Model):
                 'id': x.id,
                 'sender_id': x.sender_id,
                 'receiver_id': x.receiver_id,
-                'amount': x.amount
+                'amount': x.amount,
+                'date': x.date.isoformat()
             }
         return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.filter_by(sender_id=id).all()))}
 
@@ -202,6 +206,7 @@ class TransactionModel(db.Model):
                 'id': x.id,
                 'sender_id': x.sender_id,
                 'receiver_id': x.receiver_id,
-                'amount': x.amount
+                'amount': x.amount,
+                'date': x.date.isoformat()
             }
         return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.filter_by(receiver_id=id).all()))}
