@@ -76,6 +76,7 @@ def user_identity_lookup(user):
 
 
 #TODO: Consider moving to the top and get rid off circular dependency of db haha
+
 import resources, views, models
 
 api.add_resource(resources.UserRegistration, '/registration')
@@ -93,3 +94,8 @@ api.add_resource(resources.Transaction, '/transaction')
 api.add_resource(resources.UserFindById, '/user/<id>')
 api.add_resource(resources.AllTransactions, '/alltransactions')
 api.add_resource(resources.FindTransferById, '/transfers')
+api.add_resource(resources.UserGetSupport, '/support')
+api.add_resource(resources.ItemsInShop, '/shop')
+api.add_resource(resources.AddItemToShop, '/shop/additem')
+api.add_resource(resources.BuyItem, '/shop/buy')
+api.add_resource(resources.GetOwnPurchases, '/mypurchases')
