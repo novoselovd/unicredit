@@ -5,6 +5,13 @@ import jwt
 from flask_mail import Message
 from flask import render_template, url_for
 from sqlalchemy import and_, or_, not_
+import datetime
+from sqlalchemy.orm import relationship
+
+
+items_identifier = db.Table('items_identifier',
+                            db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
+                            db.Column('item_id', db.Integer, db.ForeignKey('items.id')))
 
 
 class UserModel(db.Model):
@@ -17,6 +24,9 @@ class UserModel(db.Model):
     name = db.Column(db.String(120), nullable=False)
     surname = db.Column(db.String(120), nullable=False)
     current_balance = db.Column(db.Integer, nullable=False)
+
+    purchases = relationship("ShopItemModel", secondary=items_identifier,
+                             back_populates='buyers')
 
     def save_to_db(self):
         db.session.add(self)
@@ -117,6 +127,25 @@ class UserModel(db.Model):
                                    user=user, link=link)
         mail.send(msg)
 
+    @staticmethod
+    def send_support_email(body, user):
+        msg = Message('Technical Support message', sender='Слайдовалюта', recipients=[app.config['MAIL_USERNAME']])
+        msg.body = render_template('technical_support.txt', user=user, body=body)
+        msg.html = render_template('technical_support.html', user=user, body=body)
+        mail.send(msg)
+
+    def get_own_purchases_list(self):
+        def to_json(x):
+            return {
+                'id': x.id,
+                'name': x.name,
+                'description': x.description,
+                'price': x.price
+            }
+        if len(self.purchases) == 0:
+            return {'message': 'list is empty'}
+        return list(map(lambda x: to_json(x), self.purchases))
+
 
 class RevokedTokenModel(db.Model):
     __tablename__ = 'revoked_tokens'
@@ -140,6 +169,7 @@ class TransactionModel(db.Model):
     sender_id = db.Column(db.Integer, nullable=False)
     receiver_id = db.Column(db.Integer, nullable=False)
     amount = db.Column(db.Integer, nullable=False)
+    date = db.Column(db.DateTime, nullable=False)
 
     def save_to_db(self):
         db.session.add(self)
@@ -168,7 +198,8 @@ class TransactionModel(db.Model):
                 'id': x.id,
                 'sender_id': x.sender_id,
                 'receiver_id': x.receiver_id,
-                'amount': x.amount
+                'amount': x.amount,
+                'date': x.date.isoformat()
             }
         return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.all()))}
 
@@ -179,7 +210,8 @@ class TransactionModel(db.Model):
                 'id': x.id,
                 'sender_id': x.sender_id,
                 'receiver_id': x.receiver_id,
-                'amount': x.amount
+                'amount': x.amount,
+                'date': x.date.isoformat()
             }
         return {'transactions': list(map(lambda x: to_json(x),
             TransactionModel.query.filter(or_(TransactionModel.sender_id == id, TransactionModel.receiver_id == id)).all()))}
@@ -191,7 +223,8 @@ class TransactionModel(db.Model):
                 'id': x.id,
                 'sender_id': x.sender_id,
                 'receiver_id': x.receiver_id,
-                'amount': x.amount
+                'amount': x.amount,
+                'date': x.date.isoformat()
             }
         return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.filter_by(sender_id=id).all()))}
 
@@ -202,6 +235,41 @@ class TransactionModel(db.Model):
                 'id': x.id,
                 'sender_id': x.sender_id,
                 'receiver_id': x.receiver_id,
-                'amount': x.amount
+                'amount': x.amount,
+                'date': x.date.isoformat()
             }
         return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.filter_by(receiver_id=id).all()))}
+
+
+class ShopItemModel(db.Model):
+    __tablename__ = 'items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+    description = db.Column(db.String)
+    price = db.Column(db.Float, nullable=False)
+
+    buyers = relationship("UserModel", secondary=items_identifier, back_populates="purchases")
+
+    @classmethod
+    def return_all(cls):
+        def to_json(x):
+            return {
+                'id': x.id,
+                'name': x.name,
+                'description': x.description,
+                'price': x.price
+            }
+        return {'items': list(map(lambda x: to_json(x), ShopItemModel.query.all()))}
+
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def purchase_item(self, user):
+        user.purchases.append(self)
+        db.session.commit()
+
+    @classmethod
+    def find_item_by_id(cls, item_id):
+        return cls.query.filter_by(id=item_id).first()
