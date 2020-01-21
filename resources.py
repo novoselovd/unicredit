@@ -213,18 +213,19 @@ class Transaction(Resource):
         new_transaction = TransactionModel(
             sender_id=sender_id,
             receiver_id=receiver_id,
-            amount=amount
+            amount=amount,
+            date=datetime.datetime.now()
         )
 
         try:
             if amount <= 0:
-                return {'message': 'Amount is less or equal to zero'}, 500
+                return {'message': 'Amount is less or equal to zero'}, 400
 
             if sender_id == receiver_id:
-                return {'message': 'Sender == Receiver'}, 500
+                return {'message': 'Sender == Receiver'}, 400
 
             if sender.current_balance < amount:
-                return {'message': 'Sender does not have enough unicoins'}, 500
+                return {'message': 'Sender does not have enough unicoins'}, 400
 
             sender.change_balance(sender.current_balance - amount)
             new_transaction.save_to_db()
@@ -232,12 +233,13 @@ class Transaction(Resource):
 
             return {
                 'message': 'Transaction from {0} to {1}: {2} unicoins'.format(sender.username, receiver.username, amount)
-            }
+            }, 200
         except:
             return {'message': 'Something went wrong'}, 500
 
 
 class AllTransactions(Resource):
+  @jwt_required
     def get(self):
         return TransactionModel.return_all()
 
@@ -248,7 +250,21 @@ transaction_par.add_argument(
 
 
 class FindTransferById(Resource):
+  @jwt_required
     def post(self):
         data = transaction_par.parse_args()
         id = data['user_id']
         return TransactionModel.return_transfer_by_user_id(id)
+
+      
+feedback_parser = reqparse.RequestParser()
+feedback_parser.add_argument('body', help='Please explain your problem', type=str, required=True, nullable=False)
+
+
+class UserGetSupport(Resource):
+    @jwt_required
+    def post(self):
+        body = feedback_parser.parse_args()['body']
+        identity = get_jwt_identity()
+        UserModel.send_support_email(body, identity)
+        return {'message': 'Thank you for contacting technical support!'}, 200
