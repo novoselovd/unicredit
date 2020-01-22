@@ -4,6 +4,7 @@ from models import UserModel, RevokedTokenModel, TransactionModel, ShopItemModel
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required,
                                 get_jwt_identity, get_raw_jwt)
 
+
 registration_parser = reqparse.RequestParser()
 registration_parser.add_argument(
     'username', help='This field cannot be blank', required=True)
@@ -30,7 +31,8 @@ class UserRegistration(Resource):
             email=data['email'],
             name=data['name'],
             surname=data['surname'],
-            current_balance=100
+            current_balance=100,
+            purchases={}
         )
 
         try:
@@ -214,7 +216,8 @@ class Transaction(Resource):
             sender_id=sender_id,
             receiver_id=receiver_id,
             amount=amount,
-            date=datetime.datetime.now()
+            date=datetime.datetime.now(),
+            transaction_type='Transfer'
         )
 
         try:
@@ -278,7 +281,7 @@ class ItemsInShop(Resource):
 
 add_item_parser = reqparse.RequestParser()
 add_item_parser.add_argument('name', help='Please fill in the name of the item', required=True, nullable=False)
-add_item_parser.add_argument('price', help='Please fill in the price of the item', required=True)
+add_item_parser.add_argument('price', help='Please fill in the price of the item', required=True, nullable=False)
 add_item_parser.add_argument('description', help='Please describe the item', required=True)
 
 
@@ -310,9 +313,25 @@ class BuyItem(Resource):
         item_id = purchase_parser.parse_args()['id']
         item = ShopItemModel.find_item_by_id(item_id)
         if item:
-            item.purchase_item(user)
-            return {'message': 'You have successfully bought {}'.format(item.name)}, 200
-        return {'message': 'Item not found'}
+            new_transaction = TransactionModel(
+                sender_id=user.id,
+                receiver_id=0,
+                amount=item.price,
+                date=datetime.datetime.now(),
+                transaction_type='Purchase'
+            )
+
+            if user.current_balance < item.price:
+                return {'message': 'Not enough money'}, 400
+
+            try:
+                item.purchase_item(user)
+                user.change_balance(user.current_balance - item.price)
+                new_transaction.save_to_db()
+                return {'message': 'You have successfully bought {}'.format(item.name)}, 200
+            except:
+                return {'message': 'Something went wrong'}, 500
+        return {'message': 'Item not found'}, 400
 
 
 class GetOwnPurchases(Resource):
@@ -321,3 +340,10 @@ class GetOwnPurchases(Resource):
         user_dict = get_jwt_identity()
         user = UserModel.find_by_username(user_dict['username'])
         return user.get_own_purchases_list()
+
+
+class GetItemById(Resource):
+    @jwt_required
+    def get(self, item_id):
+        return ShopItemModel.return_item_by_id(item_id)
+
