@@ -18,6 +18,7 @@ app = Flask(__name__)
 CORS(app)
 api = Api(app)
 
+
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_USERNAME'] = 'slidecurrence@gmail.com'
 app.config['MAIL_PASSWORD'] = 'slidevaluehse'
@@ -40,8 +41,10 @@ def create_tables():
     db.create_all()
 
 
+
 app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
 jwt = JWTManager(app)
+
 
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
@@ -99,3 +102,4 @@ api.add_resource(resources.ItemsInShop, '/shop')
 api.add_resource(resources.AddItemToShop, '/shop/additem')
 api.add_resource(resources.BuyItem, '/shop/buy')
 api.add_resource(resources.GetOwnPurchases, '/mypurchases')
+api.add_resource(resources.GetItemById, '/items/<item_id>')
