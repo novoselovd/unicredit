@@ -296,7 +296,7 @@ class ShopItemModel(db.Model):
 
     @classmethod
     def return_all(cls):
-        return {'items': list(map(lambda x: x.to_json(), ShopItemModel.query.all()))}
+        return {'items': list(map(lambda x: cls.to_json(x), ShopItemModel.query.all()))}
 
     def save_to_db(self):
         db.session.add(self)
