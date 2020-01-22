@@ -51,6 +51,15 @@ class MutableDict(Mutable, dict):
 
         dict.__delitem__(self, key)
         self.changed()
+    
+    def isin(self, item_id):
+        return item_id in dict(self).keys()
+
+    def __getstate__(self):
+        return dict(self)
+
+    def __setstate__(self, state):
+        self.update(state)
 
 
 class UserModel(db.Model):
@@ -304,10 +313,11 @@ class ShopItemModel(db.Model):
         db.session.commit()
 
     def purchase_item(self, user):
-        if self.id in user.purchases:
-            user.purchases[self.id] += 1
+        str_id = str(self.id)  # потому что в словаре ключи хранятся как строка (json-format)
+        if user.purchases.isin(str_id):
+            user.purchases[str_id] += 1
         else:
-            user.purchases[self.id] = 1
+            user.purchases[str_id] = 1
 
         db.session.commit()
 
