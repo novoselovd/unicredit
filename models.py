@@ -6,12 +6,51 @@ from flask_mail import Message
 from flask import render_template, url_for
 from sqlalchemy import and_, or_, not_
 import datetime
-from sqlalchemy.orm import relationship
+from sqlalchemy.types import TypeDecorator, VARCHAR
+import json
+from sqlalchemy.ext.mutable import Mutable
 
 
-items_identifier = db.Table('items_identifier',
-                            db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
-                            db.Column('item_id', db.Integer, db.ForeignKey('items.id')))
+class PickleType(TypeDecorator):
+    impl = VARCHAR
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = json.dumps(value)
+
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = json.loads(value)
+        return value
+
+
+class MutableDict(Mutable, dict):
+    @classmethod
+    def coerce(cls, key, value):
+        # Convert plain dictionaries to MutableDict
+
+        if not isinstance(value, MutableDict):
+            if isinstance(value, dict):
+                return MutableDict(value)
+
+            # this call will raise ValueError
+            return Mutable.coerce(key, value)
+        else:
+            return value
+
+    def __setitem__(self, key, value):
+        "Detect dictionary set events and emit change events."
+
+        dict.__setitem__(self, key, value)
+        self.changed()
+
+    def __delitem__(self, key):
+        "Detect dictionary del events and emit change events."
+
+        dict.__delitem__(self, key)
+        self.changed()
 
 
 class UserModel(db.Model):
@@ -24,9 +63,7 @@ class UserModel(db.Model):
     name = db.Column(db.String(120), nullable=False)
     surname = db.Column(db.String(120), nullable=False)
     current_balance = db.Column(db.Integer, nullable=False)
-
-    purchases = relationship("ShopItemModel", secondary=items_identifier,
-                             back_populates='buyers')
+    purchases = db.Column(MutableDict.as_mutable(PickleType))
 
     def save_to_db(self):
         db.session.add(self)
@@ -135,16 +172,9 @@ class UserModel(db.Model):
         mail.send(msg)
 
     def get_own_purchases_list(self):
-        def to_json(x):
-            return {
-                'id': x.id,
-                'name': x.name,
-                'description': x.description,
-                'price': x.price
-            }
         if len(self.purchases) == 0:
             return {'message': 'list is empty'}
-        return list(map(lambda x: to_json(x), self.purchases))
+        return self.purchases
 
 
 class RevokedTokenModel(db.Model):
@@ -170,6 +200,7 @@ class TransactionModel(db.Model):
     receiver_id = db.Column(db.Integer, nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
+    transaction_type = db.Column(db.String, nullable=False)
 
     def save_to_db(self):
         db.session.add(self)
@@ -199,7 +230,8 @@ class TransactionModel(db.Model):
                 'sender_id': x.sender_id,
                 'receiver_id': x.receiver_id,
                 'amount': x.amount,
-                'date': x.date.isoformat()
+                'date': x.date.isoformat(),
+                'type': x.transaction_type
             }
         return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.all()))}
 
@@ -211,7 +243,8 @@ class TransactionModel(db.Model):
                 'sender_id': x.sender_id,
                 'receiver_id': x.receiver_id,
                 'amount': x.amount,
-                'date': x.date.isoformat()
+                'date': x.date.isoformat(),
+                'type': x.transaction_type
             }
         return {'transactions': list(map(lambda x: to_json(x),
             TransactionModel.query.filter(or_(TransactionModel.sender_id == id, TransactionModel.receiver_id == id)).all()))}
@@ -224,7 +257,8 @@ class TransactionModel(db.Model):
                 'sender_id': x.sender_id,
                 'receiver_id': x.receiver_id,
                 'amount': x.amount,
-                'date': x.date.isoformat()
+                'date': x.date.isoformat(),
+                'type': x.transaction_type
             }
         return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.filter_by(sender_id=id).all()))}
 
@@ -236,7 +270,8 @@ class TransactionModel(db.Model):
                 'sender_id': x.sender_id,
                 'receiver_id': x.receiver_id,
                 'amount': x.amount,
-                'date': x.date.isoformat()
+                'date': x.date.isoformat(),
+                'type': x.transaction_type
             }
         return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.filter_by(receiver_id=id).all()))}
 
@@ -249,27 +284,36 @@ class ShopItemModel(db.Model):
     description = db.Column(db.String)
     price = db.Column(db.Float, nullable=False)
 
-    buyers = relationship("UserModel", secondary=items_identifier, back_populates="purchases")
+
+    @staticmethod
+    def to_json(x):
+        return {
+            'id': x.id,
+            'name': x.name,
+            'description': x.description,
+            'price': x.price
+        }
 
     @classmethod
     def return_all(cls):
-        def to_json(x):
-            return {
-                'id': x.id,
-                'name': x.name,
-                'description': x.description,
-                'price': x.price
-            }
-        return {'items': list(map(lambda x: to_json(x), ShopItemModel.query.all()))}
+        return {'items': list(map(lambda x: x.to_json(), ShopItemModel.query.all()))}
 
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()
 
     def purchase_item(self, user):
-        user.purchases.append(self)
+        if self.id in user.purchases:
+            user.purchases[self.id] += 1
+        else:
+            user.purchases[self.id] = 1
+
         db.session.commit()
 
     @classmethod
     def find_item_by_id(cls, item_id):
-        return cls.query.filter_by(id=item_id).first()
+        return cls.query.filter_by(id=int(item_id)).first()
+
+    @classmethod
+    def return_item_by_id(cls, item_id):
+        return {'item': cls.to_json(cls.find_item_by_id(item_id))}
