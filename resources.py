@@ -235,7 +235,7 @@ class Transaction(Resource):
             receiver.change_balance(receiver.current_balance + amount)
 
             return {
-                'message': 'Transaction from {0} to {1}: {2} unicoins'.format(sender.username, receiver.username, amount),
+                'message': 'Transaction from {0} to {1}: {2} unicoins'.format(sender.username, receiver.username, amount)
             }, 200
         except:
             return {'message': 'Something went wrong'}, 500

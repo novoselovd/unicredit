@@ -202,6 +202,7 @@ class TransactionModel(db.Model):
     date = db.Column(db.DateTime, nullable=False)
     transaction_type = db.Column(db.String, nullable=False)
 
+
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()
@@ -231,7 +232,7 @@ class TransactionModel(db.Model):
                 'receiver_id': x.receiver_id,
                 'amount': x.amount,
                 'date': x.date.isoformat(),
-                'type': x.transaction_type
+                'type': x.transaction_type,
             }
         return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.all()))}
 
@@ -244,7 +245,7 @@ class TransactionModel(db.Model):
                 'receiver_id': x.receiver_id,
                 'amount': x.amount,
                 'date': x.date.isoformat(),
-                'type': x.transaction_type
+                'type': x.transaction_type,
             }
         return {'transactions': list(map(lambda x: to_json(x),
             TransactionModel.query.filter(or_(TransactionModel.sender_id == id, TransactionModel.receiver_id == id)).all()))}
@@ -258,7 +259,7 @@ class TransactionModel(db.Model):
                 'receiver_id': x.receiver_id,
                 'amount': x.amount,
                 'date': x.date.isoformat(),
-                'type': x.transaction_type
+                'type': x.transaction_type,
             }
         return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.filter_by(sender_id=id).all()))}
 
@@ -271,7 +272,7 @@ class TransactionModel(db.Model):
                 'receiver_id': x.receiver_id,
                 'amount': x.amount,
                 'date': x.date.isoformat(),
-                'type': x.transaction_type
+                'type': x.transaction_type,
             }
         return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.filter_by(receiver_id=id).all()))}
 
