@@ -7,7 +7,7 @@ access_token и refresh_token. Иначе выводится сообщение 
 становится устаревшим,
 возвращается сообщение об успехе. Иначе — статус 500.
 4) UserLogoutRefresh. URL: /logout/refresh. Аналогично с access_token. 
-5) TokenRefresh. URL: /token/refresh. Требуется access_token, метод POST. В случае успеха возвращается
+5) TokenRefresh. URL: /token/refresh. Требуется refresh_token, метод POST. В случае успеха возвращается
 обновлённый access_token и статус 200.
 6) AllUsers. URL: /users. Требуется access_token. Метод get возвращает список всех пользователей.
 Метод delete удаляет всех пользователей.
