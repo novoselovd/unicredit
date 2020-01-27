@@ -16,7 +16,7 @@ errors = {
 
 app = Flask(__name__)
 CORS(app)
-api = Api(app)
+api = Api(app, errors=errors)
 
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
