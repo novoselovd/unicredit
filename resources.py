@@ -347,3 +347,46 @@ class GetItemById(Resource):
     def get(self, item_id):
         return ShopItemModel.return_item_by_id(item_id)
 
+
+add_money_parser = reqparse.RequestParser()
+add_money_parser.add_argument('id', help='Fill in the id of the user', required=True, nullable=False)
+add_money_parser.add_argument('amount', help='Fill in the id of the user', required=True)
+
+
+class AddMoney(Resource):
+    @jwt_required
+    def post(self):
+        data = add_money_parser.parse_args()
+        user_id = data['id']
+        amount = int(data['amount'])
+        if amount < 0:
+            return {'message': 'Amount can not be negative'}, 400
+        user = UserModel.find_by_id(user_id)
+        user.change_balance(user.current_balance + amount)
+        return {'message': 'Balance has been successfully updated'}, 200
+
+
+delete_parser = reqparse.RequestParser()
+delete_parser.add_argument('id', help='Please fill in the id of user you want to delete', required=True, nullable=False)
+
+class UserDelete(Resource):
+    @jwt_required
+    def delete(self):
+        user_id = delete_parser.parse_args()['id']
+        user = UserModel.find_by_id(user_id)
+        if not user:
+            return {'message': 'User has not been found'}, 400
+        user.delete(user_id)
+        return {'message': 'User with id {} has been successfully deleted'.format(user_id)}, 200
+
+
+
+class ItemDelete(Resource):
+    @jwt_required
+    def delete(self):
+        item_id = delete_parser.parse_args()['id']
+        item = ShopItemModel.find_item_by_id(item_id)
+        if not item:
+            return {'message': 'Item has not been found'}, 400
+        item.delete(item_id)
+        return {'message': 'Item with id {} has been successfully deleted'.format(item_id)}, 200
