@@ -184,6 +184,11 @@ class UserModel(db.Model):
         if len(self.purchases) == 0:
             return {'message': 'list is empty'}
         return self.purchases
+    
+    @classmethod
+    def delete(cls, user_id):
+        deleted = cls.query.filter_by(id=user_id).delete()
+        db.session.commit()
 
 
 class RevokedTokenModel(db.Model):
@@ -328,3 +333,8 @@ class ShopItemModel(db.Model):
     @classmethod
     def return_item_by_id(cls, item_id):
         return {'item': cls.to_json(cls.find_item_by_id(item_id))}
+
+    @classmethod
+    def delete(cls, item_id):
+        deleted = cls.query.filter_by(id=item_id).delete()
+        db.session.commit()
