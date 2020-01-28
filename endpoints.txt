@@ -37,3 +37,6 @@ Usage: POST-запрос, в котором содержится id пользо
 19) GetOwnPurchases. URL: /mypurchases. Требуется access-token. Usage: GET-запрос. Ответом является список товаров, 
 приобретённых владельцем токена. 
 20) GetItemById. URL: /items/<item_id>. Usage: по GET-запросу выдаётся товар, имеющий айди, равный item_id. 
+21) AddMoney. URL: /addmoney. Требуется access-token. Usage: POST-запрос, в теле запроса id пользователя и amount (>=0). Баланс пользователя увеличивается на amount денежных единиц.
+22) UserDelete. URL: /deleteuser. Требуется access-token. Usage: DELETE-запрос, в теле которого id пользователя. После запроса пользователь будет удалён из БД.
+23) ItemDelete. URL: /deleteitem. Требуется access-token. Usage: DELETE-запрос, в теле которого id айтема. После запроса айтем будет удалён из БД.
