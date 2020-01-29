@@ -32,7 +32,8 @@ class UserRegistration(Resource):
             name=data['name'],
             surname=data['surname'],
             current_balance=100,
-            purchases={}
+            purchases={},
+            isAdmin=0
         )
 
         try:
@@ -279,6 +280,30 @@ class ItemsInShop(Resource):
         return ShopItemModel.return_all()
 
 
+add_admin_parser = reqparse.RequestParser()
+add_admin_parser.add_argument('email', help='Please fill in the email of a new admin', required=True, nullable=False)
+
+#########################################################################
+class AddNewAdmin(Resource):                                            #
+    @jwt_required
+    def post(self):
+        data = add_admin_parser.parse_args()
+        user_dict = get_jwt_identity()
+        user = UserModel.find_by_id(user_dict['id'])
+
+        if user.role == 0:
+            return {'message': 'No admin rights'}, 403
+
+        new_user = UserModel.find_by_email(data['email'])
+        
+        try:
+            new_user.make_admin()
+            return {'message': 'New admin has been added'}, 200
+        except:                                                         #
+            return {'message': 'Something went wrong'}, 500             #
+#########################################################################
+
+
 add_item_parser = reqparse.RequestParser()
 add_item_parser.add_argument('name', help='Please fill in the name of the item', required=True, nullable=False)
 add_item_parser.add_argument('price', help='Please fill in the price of the item', required=True, nullable=False)
@@ -289,6 +314,7 @@ class AddItemToShop(Resource):
     @jwt_required
     def post(self):
         data = add_item_parser.parse_args()
+
         new_item = ShopItemModel(
             name=data['name'],
             price=data['price'],
@@ -358,6 +384,14 @@ class AddMoney(Resource):
     def post(self):
         data = add_money_parser.parse_args()
         user_id = data['id']
+
+##############
+        user_dict = get_jwt_identity()
+        user = UserModel.find_by_id(user_dict['id'])
+        if user.role == 0:
+            return {'message': 'No access'}, 403
+##############
+
         amount = int(data['amount'])
         if amount < 0:
             return {'message': 'Amount can not be negative'}, 400

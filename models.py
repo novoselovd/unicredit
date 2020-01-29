@@ -73,6 +73,7 @@ class UserModel(db.Model):
     surname = db.Column(db.String(120), nullable=False)
     current_balance = db.Column(db.Integer, nullable=False)
     purchases = db.Column(MutableDict.as_mutable(PickleType))
+    isAdmin = db.Column(db.Integer, nullable=False) #(1-admin, 0-user)
 
     def save_to_db(self):
         db.session.add(self)
@@ -144,6 +145,12 @@ class UserModel(db.Model):
     def change_balance(self, new_balance):
         db.session.query(UserModel).filter(UserModel.id == self.id).\
             update({UserModel.current_balance: new_balance},
+                   synchronize_session=False)
+        db.session.commit()
+
+    def make_admin(self):
+        db.session.query(UserModel).filter(UserModel.email == self.email).\
+            update({UserModel.role: 1},
                    synchronize_session=False)
         db.session.commit()
 
