@@ -385,18 +385,27 @@ class AddMoney(Resource):
         data = add_money_parser.parse_args()
         user_id = data['id']
 
-##############
         user_dict = get_jwt_identity()
         user = UserModel.find_by_id(user_dict['id'])
-        if user.role == 0:
+        if user.isAdmin == 0:
             return {'message': 'No access'}, 403
-##############
 
         amount = int(data['amount'])
         if amount < 0:
             return {'message': 'Amount can not be negative'}, 400
         user = UserModel.find_by_id(user_id)
         user.change_balance(user.current_balance + amount)
+
+        new_transaction = TransactionModel(
+            sender_id=user_dict['id'],
+            receiver_id=user_id,
+            amount=amount,
+            date=datetime.datetime.now(),
+            transaction_type='Money adding'
+        )
+
+        new_transaction.save_to_db()
+
         return {'message': 'Balance has been successfully updated'}, 200
 
 
