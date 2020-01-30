@@ -313,6 +313,11 @@ add_item_parser.add_argument('description', help='Please describe the item', req
 class AddItemToShop(Resource):
     @jwt_required
     def post(self):
+        user_dict = get_jwt_identity()
+        admin = UserModel.find_by_id(user_dict['id'])
+        if admin.isAdmin == 0:
+            return {'message': 'No access'}, 403
+
         data = add_item_parser.parse_args()
 
         new_item = ShopItemModel(
@@ -415,6 +420,11 @@ delete_parser.add_argument('id', help='Please fill in the id of user you want to
 class UserDelete(Resource):
     @jwt_required
     def delete(self):
+        user_dict = get_jwt_identity()
+        admin = UserModel.find_by_id(user_dict['id'])
+        if admin.isAdmin == 0:
+            return {'message': 'No access'}, 403
+
         user_id = delete_parser.parse_args()['id']
         user = UserModel.find_by_id(user_id)
         if not user:
@@ -427,6 +437,11 @@ class UserDelete(Resource):
 class ItemDelete(Resource):
     @jwt_required
     def delete(self):
+        user_dict = get_jwt_identity()
+        admin = UserModel.find_by_id(user_dict['id'])
+        if admin.isAdmin == 0:
+            return {'message': 'No access'}, 403
+
         item_id = delete_parser.parse_args()['id']
         item = ShopItemModel.find_item_by_id(item_id)
         if not item:
