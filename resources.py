@@ -289,9 +289,9 @@ class AddNewAdmin(Resource):                                            #
     def post(self):
         data = add_admin_parser.parse_args()
         user_dict = get_jwt_identity()
-        user = UserModel.find_by_id(user_dict['id'])
+        admin = UserModel.find_by_id(user_dict['id'])
 
-        if user.role == 0:
+        if admin.isAdmin == 0:
             return {'message': 'No admin rights'}, 403
 
         new_user = UserModel.find_by_email(data['email'])
