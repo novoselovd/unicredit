@@ -114,7 +114,14 @@ class AllUsers(Resource):
     def get(self):
         return UserModel.return_all()
 
+    @jwt_required
     def delete(self):
+        data = add_admin_parser.parse_args()
+        user_dict = get_jwt_identity()
+        admin = UserModel.find_by_id(user_dict['id'])
+        if admin.isAdmin == 0:
+            return {'message': 'No admin rights'}, 403
+     
         return UserModel.delete_all()
 
 

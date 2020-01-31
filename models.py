@@ -73,7 +73,7 @@ class UserModel(db.Model):
     surname = db.Column(db.String(120), nullable=False)
     current_balance = db.Column(db.Integer, nullable=False)
     purchases = db.Column(MutableDict.as_mutable(PickleType))
-    isAdmin = db.Column(db.Integer, nullable=False) #(1-admin, 0-user)
+    isAdmin = db.Column(db.Boolean, nullable=False) #(1-admin, 0-user)
 
     def save_to_db(self):
         db.session.add(self)
