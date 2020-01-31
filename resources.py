@@ -388,7 +388,7 @@ class GetItemById(Resource):
 
 add_money_parser = reqparse.RequestParser()
 add_money_parser.add_argument('id', help='Fill in the id of the user', required=True, nullable=False)
-add_money_parser.add_argument('amount', help='Fill in the id of the user', required=True)
+add_money_parser.add_argument('amount', help='Fill in the amount', required=True)
 
 
 class AddMoney(Resource):

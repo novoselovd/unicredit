@@ -100,7 +100,8 @@ class UserModel(db.Model):
                 'email': x.email,
                 'name': x.name,
                 'surname': x.surname,
-                'balance': x.current_balance
+                'balance': x.current_balance,
+                'isAdmin': x.isAdmin
             }
 
         return {'users': list(map(lambda x: to_json(x), UserModel.query.all()))}
@@ -114,7 +115,8 @@ class UserModel(db.Model):
                 'email': x.email,
                 'name': x.name,
                 'surname': x.surname,
-                'balance': x.current_balance
+                'balance': x.current_balance,
+                'isAdmin': x.isAdmin
             }
 
         return {'user': to_json(cls.find_by_id(id))}
