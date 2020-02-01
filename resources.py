@@ -1,4 +1,5 @@
 import datetime
+import numbers
 from flask_restful import Resource, reqparse
 from models import UserModel, RevokedTokenModel, TransactionModel, ShopItemModel
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required,
@@ -455,3 +456,36 @@ class ItemDelete(Resource):
             return {'message': 'Item has not been found'}, 400
         item.delete(item_id)
         return {'message': 'Item with id {} has been successfully deleted'.format(item_id)}, 200
+
+
+update_parser = reqparse.RequestParser()
+update_parser.add_argument('id', help='Please fill in the id of item you want to update', required=True, nullable=False)
+update_parser.add_argument('name', help='Please fill in a new name of the item', required=True, nullable=False)
+update_parser.add_argument('price', help='Please fill in a new price of the item', required=True, nullable=False)
+update_parser.add_argument('description', help='Please fill in a new description', required=True)
+
+class ItemUpdate(Resource):
+    @jwt_required
+    def post(self):
+        user_dict = get_jwt_identity()
+        admin = UserModel.find_by_id(user_dict['id'])
+        if admin.isAdmin == 0:
+            return {'message': 'No access'}, 403
+
+        item_id = update_parser.parse_args()['id']
+        item_name = update_parser.parse_args()['name']
+        item_price = update_parser.parse_args()['price']
+        item_description = update_parser.parse_args()['description']
+
+        try:
+            float(item_price)
+        except ValueError:
+            return {'message': 'Wrong price format'}, 400
+
+        item = ShopItemModel.find_item_by_id(item_id)
+        if not item:
+            return {'message': 'Item has not been found'}, 400
+        item.update(item_id, item_name, item_price, item_description)
+        return {'message': 'Item with id {} has been successfully updated'.format(item_id)}, 200
+
+

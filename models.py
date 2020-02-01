@@ -347,3 +347,9 @@ class ShopItemModel(db.Model):
     def delete(cls, item_id):
         deleted = cls.query.filter_by(id=item_id).delete()
         db.session.commit()
+
+    def update(self, item_id, new_name, new_price, new_description):
+        db.session.query(ShopItemModel).filter(ShopItemModel.id == item_id).\
+            update({ShopItemModel.name: new_name, ShopItemModel.price: new_price, ShopItemModel.description: new_description},
+                   synchronize_session=False)
+        db.session.commit()
