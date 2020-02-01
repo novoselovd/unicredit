@@ -25,7 +25,6 @@ app.config['MAIL_PASSWORD'] = 'slidevaluehse'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USE_TLS'] = False
-app.config['PROPAGATE_EXCEPTIONS'] = True
 mail = Mail(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
@@ -56,12 +55,22 @@ def check_if_token_in_blacklist(decrypted_token):
     jti = decrypted_token['jti']
     return models.RevokedTokenModel.is_jti_blacklisted(jti)
 
+
+@jwt.revoked_token_loader
+def revoked_token_callback():
+    return jsonify({
+        'status': 401,
+        'sub_status': 44,
+        'msg': 'The token has been revoked'
+    }), 401
+
+
 @jwt.invalid_token_loader
 def invalid_token_callback(reason):
     return jsonify({
         'status': 401,
         'sub_status': 43,
-        'msg': 'Problem is {}'.format(token_type)
+        'msg': 'Problem is {}'.format(reason)
     }), 401
 
 
