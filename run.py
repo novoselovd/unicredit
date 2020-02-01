@@ -25,6 +25,7 @@ app.config['MAIL_PASSWORD'] = 'slidevaluehse'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USE_TLS'] = False
+app.config['PROPAGATE_EXCEPTIONS'] = True
 mail = Mail(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
@@ -70,7 +71,7 @@ def invalid_token_callback(reason):
     return jsonify({
         'status': 401,
         'sub_status': 43,
-        'msg': 'Problem is {}'.format(reason)
+        'msg' : reason
     }), 401
 
 
