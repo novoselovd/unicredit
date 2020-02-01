@@ -55,6 +55,14 @@ def check_if_token_in_blacklist(decrypted_token):
     jti = decrypted_token['jti']
     return models.RevokedTokenModel.is_jti_blacklisted(jti)
 
+@jwt.invalid_token_loader
+def invalid_token_callback(reason):
+    return jsonify({
+        'status': 401,
+        'sub_status': 43,
+        'msg': f'Problem is {reason}'
+    }), 401
+
 
 @jwt.expired_token_loader
 def expired_token_callback(expired_token):
