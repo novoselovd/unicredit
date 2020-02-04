@@ -152,7 +152,7 @@ class UserModel(db.Model):
 
     def make_admin(self):
         db.session.query(UserModel).filter(UserModel.email == self.email).\
-            update({UserModel.role: 1},
+            update({UserModel.isAdmin: 1},
                    synchronize_session=False)
         db.session.commit()
 

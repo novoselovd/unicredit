@@ -321,6 +321,8 @@ class AddNewAdmin(Resource):                                            #
             return {'message': 'No admin rights'}, 403
 
         new_user = UserModel.find_by_email(data['email'])
+        if new_user is None:
+            return {'message': 'Email was not found'}, 400
         
         try:
             new_user.make_admin()
