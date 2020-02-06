@@ -93,7 +93,8 @@ def user_identity_lookup(user):
         'email': user.email,
         'name': user.name,
         'surname': user.surname,
-        'balance': user.current_balance
+        'balance': user.current_balance,
+        'isAdmin': user.isAdmin
     }
 
 

@@ -3,7 +3,7 @@ from passlib.hash import pbkdf2_sha256 as sha256
 from time import time
 import jwt
 from flask_mail import Message
-from flask import render_template, url_for
+from flask import render_template, url_for, Response
 from sqlalchemy import and_, or_, not_
 import datetime
 from sqlalchemy.types import TypeDecorator, VARCHAR
@@ -192,7 +192,16 @@ class UserModel(db.Model):
     def get_own_purchases_list(self):
         if len(self.purchases) == 0:
             return {'message': 'list is empty'}
-        return self.purchases
+        else:
+            arrayToReturn = []
+            keys = list(self.purchases.keys())
+            res = db.session.query(ShopItemModel).filter(ShopItemModel.id.in_(keys)).all()
+            for i in res:
+                arrayToReturn.append({'name': i.name, 'price': i.price, 'description': i.description, 'amount': self.purchases[str(i.id)]})
+
+            return {
+                'items':  json.loads(json.dumps(arrayToReturn))
+            }
     
     @classmethod
     def delete(cls, user_id):
@@ -307,6 +316,7 @@ class ShopItemModel(db.Model):
     name = db.Column(db.String, nullable=False)
     description = db.Column(db.String)
     price = db.Column(db.Float, nullable=False)
+    inStock = db.Column(db.Boolean, nullable=False, default=True)
 
 
     @staticmethod
@@ -315,12 +325,13 @@ class ShopItemModel(db.Model):
             'id': x.id,
             'name': x.name,
             'description': x.description,
-            'price': x.price
+            'price': x.price,
+            'inStock': x.inStock
         }
 
     @classmethod
     def return_all(cls):
-        return {'items': list(map(lambda x: cls.to_json(x), ShopItemModel.query.all()))}
+        return {'items': list(map(lambda x: cls.to_json(x), ShopItemModel.query.filter_by(inStock=True).all()))}
 
     def save_to_db(self):
         db.session.add(self)
@@ -345,7 +356,9 @@ class ShopItemModel(db.Model):
 
     @classmethod
     def delete(cls, item_id):
-        deleted = cls.query.filter_by(id=item_id).delete()
+        db.session.query(ShopItemModel).filter(ShopItemModel.id == item_id).\
+            update({ShopItemModel.inStock: False},
+                   synchronize_session=False)
         db.session.commit()
 
     def update(self, item_id, new_name, new_price, new_description):

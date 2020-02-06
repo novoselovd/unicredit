@@ -371,25 +371,30 @@ class BuyItem(Resource):
         user = UserModel.find_by_username(user_dict['username'])
         item_id = purchase_parser.parse_args()['id']
         item = ShopItemModel.find_item_by_id(item_id)
+
         if item:
-            new_transaction = TransactionModel(
-                sender_id=user.id,
-                receiver_id=0,
-                amount=item.price,
-                date=datetime.datetime.now(),
-                transaction_type='Purchase'
-            )
+            if item.inStock:
+                new_transaction = TransactionModel(
+                    sender_id=user.id,
+                    receiver_id=0,
+                    amount=item.price,
+                    date=datetime.datetime.now(),
+                    transaction_type='Purchase'
+                )
 
-            if user.current_balance < item.price:
-                return {'message': 'Not enough money'}, 400
+                if user.current_balance < item.price:
+                    return {'message': 'Not enough money'}, 400
 
-            try:
-                item.purchase_item(user)
-                user.change_balance(user.current_balance - item.price)
-                new_transaction.save_to_db()
-                return {'message': 'You have successfully bought {}'.format(item.name)}, 200
-            except:
-                return {'message': 'Something went wrong'}, 500
+                try:
+                    item.purchase_item(user)
+                    user.change_balance(user.current_balance - item.price)
+                    new_transaction.save_to_db()
+                    return {'message': 'You have successfully bought {}'.format(item.name)}, 200
+                except:
+                    return {'message': 'Something went wrong'}, 500
+            else:
+                {'message': 'You can not buy this item'}, 400
+
         return {'message': 'Item not found'}, 400
 
 
