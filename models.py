@@ -191,7 +191,7 @@ class UserModel(db.Model):
 
     def get_own_purchases_list(self):
         if len(self.purchases) == 0:
-            return {'message': 'list is empty'}
+            return {'items': json.dumps([])}
         else:
             arrayToReturn = []
             keys = list(self.purchases.keys())
