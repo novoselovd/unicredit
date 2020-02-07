@@ -347,7 +347,8 @@ class AddItemToShop(Resource):
             return {'message': 'No access'}, 403
 
         data = add_item_parser.parse_args()
-
+        if data['price'] < 0:
+            return {'message': 'Price can not be negative'}, 400
         new_item = ShopItemModel(
             name=data['name'],
             price=data['price'],
