@@ -256,7 +256,7 @@ class TransactionModel(db.Model):
         return cls.query.filter_by(receiver_id=user_id).all()
 
     @classmethod
-    def return_all(cls):
+    def return_all(cls, page):
         def to_json(x):
             return {
                 'id': x.id,
@@ -266,7 +266,10 @@ class TransactionModel(db.Model):
                 'date': x.date.isoformat(),
                 'type': x.transaction_type,
             }
-        return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.all()))}
+        if page == -1:
+            return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.all()))}
+        else:
+            return {'transactions': list(map(lambda x: to_json(x), TransactionModel.query.paginate(page + 1, 10, False).items)), 'total transactions': TransactionModel.query.paginate(page, 10, False).total}
 
     @classmethod
     def return_transfer_by_user_id(cls, id):

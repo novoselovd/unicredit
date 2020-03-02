@@ -268,10 +268,19 @@ class Transaction(Resource):
             return {'message': 'Something went wrong'}, 500
 
 
+transaction_page = reqparse.RequestParser()
+transaction_page.add_argument(
+    'page', help='Please fill in transaction page', type=int, required=False)
+
+
 class AllTransactions(Resource):
     @jwt_required
     def get(self):
-        return TransactionModel.return_all()
+        data = transaction_page.parse_args()
+        page = data['page']
+        if not page:
+            page = -1
+        return TransactionModel.return_all(page)
 
 
 transaction_par = reqparse.RequestParser()
@@ -347,8 +356,10 @@ class AddItemToShop(Resource):
             return {'message': 'No access'}, 403
 
         data = add_item_parser.parse_args()
+
         if data['price'] < 0:
             return {'message': 'Price can not be negative'}, 400
+
         new_item = ShopItemModel(
             name=data['name'],
             price=data['price'],
@@ -513,5 +524,4 @@ class ItemUpdate(Resource):
             return {'message': 'Item has not been found'}, 400
         item.update(item_id, item_name, item_price, item_description)
         return {'message': 'Item with id {} has been successfully updated'.format(item_id)}, 200
-
 
